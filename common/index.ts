@@ -11,3 +11,10 @@ export interface Dog {
   name: string;
   birth_date: string;
 }
+
+export interface LikeOrDislike {
+  id: number;
+  like: boolean;
+  from: number;
+  to: number;
+}
