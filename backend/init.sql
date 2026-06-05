@@ -1,13 +1,15 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE dogs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id serial PRIMARY KEY,
   "name" TEXT NOT NULL,
   birth_date DATE NOT NULL
 );
 
+INSERT INTO dogs ("name", birth_date) VALUES ('Sinta', '2020-01-01');
+INSERT INTO dogs ("name", birth_date) VALUES ('Tintin', '2021-01-01');
+INSERT INTO dogs ("name", birth_date) VALUES ('Kicki', '2022-01-01');
+
 CREATE TABLE likes_and_dislikes (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id serial PRIMARY KEY,
   "like" BOOLEAN NOT NULL,
   "from" INTEGER,
   "to" INTEGER,
@@ -15,14 +17,10 @@ CREATE TABLE likes_and_dislikes (
   FOREIGN KEY("to") REFERENCES dogs(id)
 );
 
-INSERT INTO dogs ("name", birth_date) VALUES ('Sinta', '2020-01-01');
-INSERT INTO dogs ("name", birth_date) VALUES ('Tintin', '2021-01-01');
-INSERT INTO dogs ("name", birth_date) VALUES ('Kicki', '2022-01-01');
-
 INSERT INTO likes_and_dislikes ("like", "from", "to") VALUES (TRUE, 1, 2);
 
 CREATE TABLE dates (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id serial PRIMARY KEY,
   "date" DATE,
   "start" TIME,
   "end" TIME,

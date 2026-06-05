@@ -2,9 +2,8 @@ import cors from "cors";
 import express from "express";
 import fs from "fs";
 import multer from "multer";
-import * as sqlite from "sqlite";
-import type { Database } from "sqlite";
-import sqlite3 from "sqlite3";
+import dotenv from "dotenv";
+import { Client } from "pg";
 
 import type { Dog, LikeOrDislike } from "common";
 
@@ -12,14 +11,13 @@ const upload = multer({
   dest: "uploads"
 });
 
-export let database: Database;
+dotenv.config();
 
-database = await sqlite.open({
-  driver: sqlite3.Database,
-  filename: "database.sqlite"
+const client = new Client({
+  connectionString: process.env.PGURI
 });
 
-await database.run("PRAGMA foreign_keys = ON");
+client.connect();
 
 const app = express();
 
@@ -48,33 +46,33 @@ app.post("/upload/:user", upload.single("photo"), async (request, response) => {
 });
 
 app.get("/dogs", async (_request, response) => {
-  const dogs: Dog[] = await database.all("SELECT * FROM dogs");
-
-  response.send(dogs);
+  response.send((await client.query<Dog[]>("SELECT * FROM dogs")).rows);
 });
 
 app.get("/candidates/:user", async (request, response) => {
-  const candicates: Dog[] = await database.all(
-    `
-      SELECT
-        *
-      FROM
-        dogs
-      WHERE
-        id != ?
-        AND NOT EXISTS (
+  response.send(
+    (
+      await client.query<Dog[]>(
+        `
           SELECT
-            "to"
+            *
           FROM
-            likes_and_dislikes
+            dogs
           WHERE
-            "from" = ?
-            AND "to" = dogs.id)
+            id != $1
+            AND NOT EXISTS (
+              SELECT
+                "to"
+              FROM
+                likes_and_dislikes
+              WHERE
+                "from" = $1
+                AND "to" = dogs.id)
       `,
-    [request.params.user, request.params.user]
+        [request.params.user]
+      )
+    ).rows
   );
-
-  response.send(candicates);
 });
 
 app.post("/:verb/:from/:to", async (request, response) => {
@@ -87,8 +85,8 @@ app.post("/:verb/:from/:to", async (request, response) => {
 
   console.debug(`${from} ${verb === "like" ? "" : "o"}gillar ${to}`);
 
-  await database.run(
-    'INSERT INTO likes_and_dislikes ("like", "from", "to") VALUES (?, ?, ?)',
+  await client.query(
+    'INSERT INTO likes_and_dislikes ("like", "from", "to") VALUES ($1, $2, $3)',
     [verb === "like", from, to]
   );
 
